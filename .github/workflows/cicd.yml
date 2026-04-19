@@ -97,8 +97,9 @@ jobs:
             pip install -r requirements.txt
             pkill -f "python3 app.py" || true
             nohup python3 app.py > app.log 2>&1 &
+            sleep 2
             echo "Staging deployment complete!"
-
+            exit 0
   # ── JOB 4: DEPLOY TO PRODUCTION ──────────────────────────
   deploy-production:
     name: Deploy to Production
