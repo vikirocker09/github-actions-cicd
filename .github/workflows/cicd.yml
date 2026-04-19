@@ -96,10 +96,20 @@ jobs:
             . venv/bin/activate
             pip install -r requirements.txt
             pkill -f "python3 app.py" || true
-            nohup python3 app.py > app.log 2>&1 &
-            sleep 2
+            sleep 1
+            cd /home/ubuntu/app
+            source venv/bin/activate
+            nohup python3 app.py > /home/ubuntu/app/app.log 2>&1 &
+            APP_PID=$!
+            sleep 3
+            if ps -p $APP_PID > /dev/null; then
+              echo "App started successfully with PID $APP_PID"
+            else
+              echo "App failed to start, check app.log"
+              cat /home/ubuntu/app/app.log
+              exit 1
+            fi
             echo "Staging deployment complete!"
-            exit 0
   # ── JOB 4: DEPLOY TO PRODUCTION ──────────────────────────
   deploy-production:
     name: Deploy to Production
