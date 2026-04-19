@@ -9,7 +9,6 @@ on:
     types: [published]
 
 jobs:
-  # ── JOB 1: TEST ──────────────────────────────────────────
   test:
     name: Install & Test
     runs-on: ubuntu-latest
@@ -37,7 +36,6 @@ jobs:
           name: coverage-report
           path: coverage.xml
 
-  # ── JOB 2: BUILD ─────────────────────────────────────────
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -69,7 +67,6 @@ jobs:
           name: app-package
           path: dist/
 
-  # ── JOB 3: DEPLOY TO STAGING ─────────────────────────────
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
@@ -85,57 +82,4 @@ jobs:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_KEY }}
-          script: |
-            sudo apt update -y
-            sudo apt install python3 python3-pip python3-venv git -y
-            cd /home/ubuntu
-            git clone https://github.com/${{ github.repository }}.git app || \
-              (cd app && git pull origin staging)
-            cd app
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install -r requirements.txt
-            pkill -f "python3 app.py" || true
-            sleep 1
-            cd /home/ubuntu/app
-            source venv/bin/activate
-            nohup python3 app.py > /home/ubuntu/app/app.log 2>&1 &
-            APP_PID=$!
-            sleep 3
-            if ps -p $APP_PID > /dev/null; then
-              echo "App started successfully with PID $APP_PID"
-            else
-              echo "App failed to start, check app.log"
-              cat /home/ubuntu/app/app.log
-              exit 1
-            fi
-            echo "Staging deployment complete!"
-  # ── JOB 4: DEPLOY TO PRODUCTION ──────────────────────────
-  deploy-production:
-    name: Deploy to Production
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name == 'release'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Deploy to Production EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            sudo apt update -y
-            sudo apt install python3 python3-pip python3-venv git -y
-            cd /home/ubuntu
-            git clone https://github.com/${{ github.repository }}.git app || \
-              (cd app && git pull origin main)
-            cd app
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install -r requirements.txt
-            pkill -f "python3 app.py" || true
-            nohup python3 app.py > app.log 2>&1 &
-            echo "Production deployment complete!"
+          script: bash /home/ubuntu/deplo
